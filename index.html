@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="ru" >
+  <head>
+    <meta charset="UTF-8">
+    <title>Колесо баланса на Vue.js</title>
+
+  <body>
+    <div id="demo">
+      <svg width="250" height="250">
+        <polygraph :stats="stats"></polygraph>
+      </svg>
+
+      <div v-for="stat in stats">
+        <label>{{stat.label}}</label>
+        <input type="range" v-model="stat.value" min="0" max="100" />
+        <span>{{stat.value}}</span>
+        <button @click="remove(stat)" class="remove">удалить</button>
+      </div>
+
+      <form id="add">
+        <input name="newlabel" v-model="newLabel" />
+        <button @click="add">Добавить направление</button>
+      </form>
+
+      <pre id="raw">{{ stats }}</pre>
+    </div>
+    <script src="https://unpkg.com/vue@2"></script>
+    <script type="text/x-template" id="polygraph-template">
+    <g>
+      <polygon :points="points"></polygon>
+      <circle cx="100" cy="100" r="80"></circle>
+      <axis-label
+        v-for="(stat, index) in stats"
+        :stat="stat"
+        :index="index"
+        :total="stats.length">
+      </axis-label>
+    </g>
+  </script>
+  
+  <script type="text/x-template" id="axis-label-template">
+    <text :x="point.x" :y="point.y">{{stat.label}}</text>
+  </script>
+
+  <script>
+    var stats = [
+      { label: "Карьера", value: 100 },
+      { label: "Саморазвитие", value: 46 },
+      { label: "Друзья", value: 100 },
+      { label: "Здоровье", value: 90 },
+      { label: "Хобби", value: 80 },
+      { label: "Деньги", value: 100 },
+      { label: "Отдых", value: 40 },
+      { label: "Семья", value: 55 }
+    ];
+  
+    Vue.component("polygraph", {
+      props: ["stats"],
+      template: "#polygraph-template",
+      computed: {
+        points: function() {
+          var total = this.stats.length;
+          return this.stats
+            .map(function(stat, i) {
+              var point = valueToPoint(stat.value, i, total);
+              return point.x + "," + point.y;
+            })
+            .join(" ");
+        }
+      },
+  
+      components: {
+        "axis-label": {
+          props: {
+            stat: Object,
+            index: Number,
+            total: Number
+          },
+          template: "#axis-label-template",
+          computed: {
+            point: function() {
+              return valueToPoint(
+                +this.stat.value + 10,
+                this.index,
+                this.total
+              );
+            }
+          }
+        }
+      }
+    });
+  
+    function valueToPoint(value, index, total) {
+      var x = 0;
+      var y = -value * 0.8;
+      var angle = ((Math.PI * 2) / total) * index;
+      var cos = Math.cos(angle);
+      var sin = Math.sin(angle);
+      var tx = x * cos - y * sin + 100;
+      var ty = x * sin + y * cos + 100;
+      return {
+        x: tx,
+        y: ty
+      };
+    }
+
+new Vue({
+  el: "#demo",
+  data: {
+    newLabel: "",
+    stats: stats
+  },
+  methods: {
+    add: function(e) {
+      e.preventDefault();
+      if (!this.newLabel) return;
+      this.stats.push({
+        label: this.newLabel,
+        value: 100
+      });
+      this.newLabel = "";
+    },
+    remove: function(stat) {
+      if (this.stats.length > 3) {
+        this.stats.splice(this.stats.indexOf(stat), 1);
+      } else {
+        alert("Должно остаться как минимум три направления");
+      }
+    }
+  }
+});
+  </script>
+
+<style type="text/css">
+    body {
+      font-family: Helvetica Neue, Arial, sans-serif;
+    }
+  
+    polygon {
+      fill: #42b983;
+      opacity: 0.75;
+    }
+  
+    circle {
+      fill: transparent;
+      stroke: #999;
+    }
+  
+    text {
+      font-family: Helvetica Neue, Arial, sans-serif;
+      font-size: 10px;
+      fill: #666;
+    }
+  
+    label {
+      display: inline-block;
+      margin-bottom: 10px;
+      margin-left: 10px;
+      width: 120px;
+    }
+  
+    #raw {
+      position: absolute;
+      top: 0;
+      left: 370px;
+    }
+  </style>
+  </body>
+</html>
